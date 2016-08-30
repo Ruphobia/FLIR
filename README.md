@@ -30,6 +30,8 @@ https://github.com/pfalcon/esp-open-sdk
 
 https://github.com/Ruphobia/FLIR
 
+https://github.com/maxritter/DIY-Thermocam
+
 # TODO
 
 Drop the use of bitbanginging for SPI stuff and use the esp-open-rtos spi libs
