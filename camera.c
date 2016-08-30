@@ -10,7 +10,7 @@ void CaptureImage()
 	memset(CameraBuffer,0,sizeof(CameraBuffer));
 	gpio_write(GPIO_SPI_CLK,1);//set clock high
 	gpio_write(GPIO_Camera_CS,0);//enable chip select for camera
-	vTaskDelayMs(1);//deal a small ammount
+	vTaskDelayMs(1);//delay a small amount
 	for(int i = 0; i< 4800; i++)
 	{
 		for(int j = 0; j<16; j++)
@@ -54,7 +54,7 @@ static err_t Control_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t 
 		if (p->tot_len > 0)
 		{
 
-			//get firmware version
+			//get an image
 			if ( !(strstr(p->payload, "680900") == NULL) )
 			{
 				printf("Capturing Image\n");
@@ -98,12 +98,12 @@ err_t Control_accept(void *arg, struct tcp_pcb *pcb, err_t err)
 	//Note: we expect that we will only talk to
 	//one socket at a time, so we are only
 	//concerned with the latest connection.
-	//this could lead to some issues if multipul
+	//this could lead to some issues if multiple
 	//devices connect to the softAP then
 	//connect to this port.  It might be
 	//better to maintain a list of connect
 	//sockets then send all TX to all.
-	//only testing will conferm if this is OK...
+	//only testing will confirm if this is OK...
 	ControlTCPServer = pcb;
 
 	return ERR_OK;
@@ -126,7 +126,7 @@ void ControlCreateSocketTask(void *pvParameters)
 
 		vTaskDelayMs(1000);
 		taskYIELD();
-		printf("Heart Beat\n");
+		printf("Heart Beat - STOP CRASHING!!!\n");
 	}
 
 }

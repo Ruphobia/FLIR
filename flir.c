@@ -2,23 +2,13 @@
 #include "userinterface.h"
 #include "camera.h"
 
-
 //**********READ ME**********************************
 // MAKE sure you set "TCP_SND_BUF" in opt.h to
 // at least 10, or you will get buffer overflows on
 // socket transmits.
 //
 //***************************************************
-
-//contains the WiFi AP Password.  This will be changed at
-//burn time using a special build tool to burn a random and
-//unique password for each unit.
 #include "user_config.h"
-
-
-//********** Version used to determine if we should OTA *********//
-int VersionNumber = 1;
-
 
 //********************************************************
 //***********DO NOT REMOVE UNTIL BUG IS FIXED*************
@@ -63,26 +53,6 @@ void user_init()
 	cfg.authmode = AUTH_WPA_WPA2_PSK;
 	cfg.max_connection = 5;
 
-	//check for wifi password in flash, by looking for
-	//magic number @0x40000.
-	unsigned int Magic;
-	sdk_spi_flash_read(0x40000, &Magic, sizeof(int));
-
-	//if the magic number isn't present, then
-	//this is a fresh first time install
-	//so we want to set the wifi password
-	if (Magic != 6991)
-	{
-		Magic = 6991;//make sure we set the magic
-		sdk_spi_flash_erase_sector(0x40);//erase our flash block
-		sdk_spi_flash_write(0x40000, &Magic, sizeof(int));//write magic
-		sdk_spi_flash_write(0x40000 + sizeof(int),(uint32_t*) &password[0], 10);//write password
-	}
-
-	//read in the wifi password, should not change from first install
-	//even if we OTA a new image with a different password.
-	sdk_spi_flash_read(0x40000 + sizeof(int),(uint32_t*) &password[0], 10);
-
 	memcpy(cfg.password, password, passwdlen);
 	sdk_wifi_softap_set_config(&cfg);
 	sdk_wifi_set_opmode(SOFTAP_MODE);//We are both an access point and station
@@ -120,7 +90,7 @@ void user_init()
 
 	gpio_enable(GPIO_SPI_CLK, GPIO_OUTPUT);//spi clk
 
-	//strange crap for gpio16
+	//TODO:strange crap for gpio16, fix this properly
 	GPF16 = GP16FFS(GPFFS_GPIO(GPIO_DISPLAY_CS));//Set mode to GPIO
 	GPC16 = 0;//?
 	GP16E |= 1;//enable gpio 16
