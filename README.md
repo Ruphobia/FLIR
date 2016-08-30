@@ -30,3 +30,13 @@ https://github.com/pfalcon/esp-open-sdk
 
 https://github.com/Ruphobia/FLIR
 
+# TODO
+
+Drop the use of bitbanginging for SPI stuff and use the esp-open-rtos spi libs
+
+Get the camera working
+
+Clean up the code and add license / credit information for the code used from above resources
+
+Learn to spell :P
+
