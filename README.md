@@ -5,9 +5,13 @@ Attempting to connect a Lepton FLIR module (https://www.sparkfun.com/products/13
 # Status
 
 Sharp Memory Display - Can clear and set pixels using buffer, need to convert more of the adafruit libs over to esp
+
 Lepton - Not working yet, long way to go :(
+
 Speaker - working, implemented ISR to turn alarm on / off, need to fix silkscreen / pinouts for speaker, is also bassakwards
+
 LED - working, is triggered on/off with speaker, need to fix silkscreen / pin assignments for LED, they are bassakwards :P
+
 Network - working soft AP mode
 
 
