@@ -7,33 +7,12 @@ xQueueHandle ButtonQueue;
 
 #define GPIO_HANDLER_PB1 gpio00_interrupt_handler
 
-#ifndef _swap_int16_t
-#define _swap_int16_t(a, b) { int16_t t = a; a = b; b = t; }
-#endif
-#ifndef _swap_uint16_t
-#define _swap_uint16_t(a, b) { uint16_t t = a; a = b; b = t; }
-#endif
-
-uint8_t _sharpmem_vcom, datapinmask, clkpinmask;
-
-// LCD Dimensions
-#define SHARPMEM_LCDWIDTH       (96)
-#define SHARPMEM_LCDHEIGHT 		(96)
-
-#define SHARPMEM_BIT_WRITECMD   (0x80)
-#define SHARPMEM_BIT_VCOM       (0x40)
-#define SHARPMEM_BIT_CLEAR      (0x20)
-#define TOGGLE_VCOM             do { _sharpmem_vcom = _sharpmem_vcom ? 0x00 : SHARPMEM_BIT_VCOM; } while(0);
-
-uint8_t sharpmem_buffer[(SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8];
-
 int buzzerInterval = 0;
 bool AlarmIsOn = false;
 
 
 void frc1_interrupt_handler(void)
 {
-
 	buzzerInterval++;
 	if (buzzerInterval <= 2400)
 	{
@@ -73,115 +52,6 @@ void Alarm_ON()
 		timer_set_run(FRC1, true);
 		AlarmIsOn = true;
 	}
-}
-
-void Display_SendByte(uint8_t data)
-{
-	uint8_t i = 0;
-
-	// LCD expects LSB first
-	for (i=0; i<8; i++)
-	{
-		// Make sure clock starts low
-		//digitalWrite(_clk, LOW);
-		gpio_write(14,0);
-
-		if (data & 0x80)
-			//digitalWrite(_mosi, HIGH);
-			gpio_write(13,1);
-		else
-			//digitalWrite(_mosi, LOW);
-			gpio_write(13,0);
-
-		// Clock is active high
-		//digitalWrite(_clk, HIGH);
-		gpio_write(14,1);
-		data <<= 1;
-	}
-	// Make sure clock ends low
-	//digitalWrite(_clk, LOW);
-	gpio_write(14,0);
-}
-
-void Display_sendbyteLSB(uint8_t data)
-{
-	uint8_t i = 0;
-
-	// LCD expects LSB first
-	for (i=0; i<8; i++)
-	{
-		// Make sure clock starts low
-		//digitalWrite(_clk, LOW);
-		gpio_write(14,0);
-		if (data & 0x01)
-			//digitalWrite(_mosi, HIGH);
-			gpio_write(13,1);
-		else
-			//digitalWrite(_mosi, LOW);
-			gpio_write(13,0);
-		// Clock is active high
-		//digitalWrite(_clk, HIGH);
-		gpio_write(14,1);
-		data >>= 1;
-	}
-	// Make sure clock ends low
-	//digitalWrite(_clk, LOW);
-	gpio_write(14,0);
-}
-
-void Display_Clear()
-{
-	memset(sharpmem_buffer, 0xff, (SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8);
-	// Send the clear screen command rather than doing a HW refresh (quicker)
-	Display_ChipSelect(1);
-	Display_SendByte(_sharpmem_vcom | SHARPMEM_BIT_CLEAR);
-	Display_sendbyteLSB(0x00);
-	TOGGLE_VCOM;
-	Display_ChipSelect(0);
-}
-
-void Display_ChipSelect(bool Value)
-{
-	if(Value == 1)
-		GP16O |= 1; // Set GPIO_16
-	else
-		GP16O &= ~1; // clear GPIO_16a
-}
-
-void Display_refresh(void)
-{
-	uint16_t i, totalbytes, currentline, oldline;
-	totalbytes = (SHARPMEM_LCDWIDTH * SHARPMEM_LCDHEIGHT) / 8;
-
-	// Send the write command
-	Display_ChipSelect(1);
-	Display_SendByte(SHARPMEM_BIT_WRITECMD | _sharpmem_vcom);
-	TOGGLE_VCOM;
-
-	// Send the address for line 1
-	oldline = currentline = 1;
-	Display_sendbyteLSB(currentline);
-
-	// Send image buffer
-	for (i=0; i<totalbytes; i++)
-	{
-		Display_sendbyteLSB(sharpmem_buffer[i]);
-		currentline = ((i+1)/(SHARPMEM_LCDWIDTH/8)) + 1;
-		if(currentline != oldline)
-		{
-			// Send end of line and address bytes
-			Display_sendbyteLSB(0x00);
-			if (currentline <= SHARPMEM_LCDHEIGHT)
-			{
-				Display_sendbyteLSB(currentline);
-			}
-			oldline = currentline;
-		}
-	}
-
-	// Send another trailing 8 bits for the last line
-	Display_sendbyteLSB(0x00);
-	Display_ChipSelect(0);
 }
 
 

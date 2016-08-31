@@ -1,14 +1,18 @@
-#include "headers.h"
-#include "userinterface.h"
-#include "camera.h"
-
 //**********READ ME**********************************
 // MAKE sure you set "TCP_SND_BUF" in opt.h to
 // at least 10, or you will get buffer overflows on
 // socket transmits.
 //
 //***************************************************
+
+#include "headers.h"
+#include "userinterface.h"
+#include "camera.h"
 #include "user_config.h"
+
+
+
+sys_mutex_t SPI_Mutex;
 
 //********************************************************
 //***********DO NOT REMOVE UNTIL BUG IS FIXED*************
@@ -23,13 +27,21 @@ void sdk_hostap_handle_timer(void *cnx_node)
 {
 }
 
-
 //entry point into user space,
 //this is "like" void main()
 void user_init()
 {
+	//disable system debug printing to
+	//UART0
 	system_set_os_print(1);
+
+	//set CPU clock frequency to 160Mhz
 	sdk_os_update_cpu_frequency(160);
+
+	//create a mutex for the SPI port
+	//so the display and the camera
+	//don't step on each other
+	sys_mutex_new(&SPI_Mutex);
 
 	//yet another bug workaround, we need to make sure the station is disconnected before
 	//we allow the user to initiate a AP scan or we be crashing bang, boom, ding, bing, bong...
@@ -88,21 +100,8 @@ void user_init()
 	gpio_enable(GPIO_SPEAKER, GPIO_OUTPUT);//Speaker
 	gpio_write(GPIO_SPEAKER,0);
 
-	gpio_enable(GPIO_SPI_CLK, GPIO_OUTPUT);//spi clk
-
-	//TODO:strange crap for gpio16, fix this properly
-	GPF16 = GP16FFS(GPFFS_GPIO(GPIO_DISPLAY_CS));//Set mode to GPIO
-	GPC16 = 0;//?
-	GP16E |= 1;//enable gpio 16
-
-	Display_ChipSelect(0);//de-select display
-
 	gpio_enable(GPIO_Camera_CS,GPIO_OUTPUT);
 	gpio_write(GPIO_Camera_CS, 1);//de-select camera
-
-	gpio_enable(GPIO_SPI_MOSI, GPIO_OUTPUT);//SPI MOSI
-	gpio_enable(GPIO_SPI_MISO, GPIO_INPUT);
-
 
 	//Generate pushbutton events on both rising and
 	//lowering edge so we can calculate time of
@@ -111,8 +110,8 @@ void user_init()
 	//handler is located in Chontrol.c
 	gpio_set_interrupt(0, GPIO_INTTYPE_EDGE_ANY);
 
-	//Display_Clear();
-	//InitCamera();
+	Adafruit_Sharpmemory_Display_Init(GPIO_DISPLAY_CS,&SPI_Mutex);
+	FLIR_Lipton_Init(GPIO_Camera_CS, &SPI_Mutex);
 
 	//xTaskCreate(ButtonTask, (signed char *)"ButtonEventQueueHandler", 512, NULL, 2, NULL);//Push Button monitor thread
 	xTaskCreate(ControlCreateSocketTask, (signed char *)"ControlTCP", 512, NULL, 2, NULL);//Control socket thread

@@ -5,31 +5,6 @@ uint16_t CameraBuffer[4800];
 static struct tcp_pcb *ControlTCPServer = NULL;
 static int ControlConnections = 0;
 
-void CaptureImage()
-{
-	memset(CameraBuffer,0,sizeof(CameraBuffer));
-	gpio_write(GPIO_SPI_CLK,1);//set clock high
-	gpio_write(GPIO_Camera_CS,0);//enable chip select for camera
-	vTaskDelayMs(1);//delay a small amount
-	for(int i = 0; i< 4800; i++)
-	{
-		for(int j = 0; j<16; j++)
-		{
-			CameraBuffer[i] <<= 1;
-			gpio_write(GPIO_SPI_CLK,0);
-			CameraBuffer[i] += gpio_read(GPIO_SPI_MISO);
-			gpio_write(GPIO_SPI_CLK,1);
-		}
-	}
-
-}
-
-void InitCamera()
-{
-	//clear camera buffer
-	memset(CameraBuffer,0,sizeof(CameraBuffer));
-}
-
 static void Control_Close_conn(struct tcp_pcb *pcb)
 {
 	tcp_arg(pcb, NULL);
@@ -53,17 +28,14 @@ static err_t Control_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t 
 		//if the packet is not empty do something with it
 		if (p->tot_len > 0)
 		{
-
 			//get an image
 			if ( !(strstr(p->payload, "680900") == NULL) )
 			{
 				printf("Capturing Image\n");
-				CaptureImage();
+				FLIR_Lipton_CaptureImage(CameraBuffer);
 				printf("Sending Image\n");
 				tcp_write(ControlTCPServer,CameraBuffer,sizeof(CameraBuffer), 0);
 			}
-
-
 		}
 		pbuf_free(p);
 	} else
@@ -126,7 +98,6 @@ void ControlCreateSocketTask(void *pvParameters)
 
 		vTaskDelayMs(1000);
 		taskYIELD();
-		printf("Heart Beat - STOP CRASHING!!!\n");
 	}
 
 }
