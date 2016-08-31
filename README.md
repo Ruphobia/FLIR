@@ -28,7 +28,7 @@ https://github.com/SuperHouse/esp-open-rtos
 
 https://github.com/pfalcon/esp-open-sdk
 
-https://github.com/Ruphobia/FLIR
+https://github.com/Ruphobia/mydev-esp-open-rtos
 
 https://github.com/maxritter/DIY-Thermocam
 
