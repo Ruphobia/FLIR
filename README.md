@@ -4,7 +4,7 @@ Attempting to connect a Lepton FLIR module (https://www.sparkfun.com/products/13
 
 # Status
 
-Sharp Memory Display - Can clear and set pixels using buffer, need to convert more of the adafruit libs over to esp
+Sharp Memory Display - Removed bitbanginging using SPI drivers now, added more stuff from adafruit lib, not currently working
 
 Lepton - Not working yet, long way to go :(
 
