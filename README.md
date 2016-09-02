@@ -38,6 +38,8 @@ https://groups.google.com/forum/#!forum/flir-lepton
 
 https://groups.google.com/forum/#!topic/flir-lepton/MCy66OHf0l4
 
+http://www.electricstuff.co.uk/lepton.html
+
 
 # TODO
 
