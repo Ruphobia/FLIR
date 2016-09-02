@@ -36,6 +36,7 @@ https://github.com/josepbordesjove/FLiR-lepton
 
 https://groups.google.com/forum/#!forum/flir-lepton
 
+https://groups.google.com/forum/#!topic/flir-lepton/MCy66OHf0l4
 
 
 # TODO
