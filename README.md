@@ -34,6 +34,9 @@ https://github.com/maxritter/DIY-Thermocam
 
 https://github.com/josepbordesjove/FLiR-lepton
 
+https://groups.google.com/forum/#!forum/flir-lepton
+
+
 
 # TODO
 
