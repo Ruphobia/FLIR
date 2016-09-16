@@ -1,9 +1,33 @@
 #include "camera.h"
+#include "userinterface.h"
 
-uint16_t CameraBuffer[4800];
+FLIRBuffer CameraBuffer;
+static uint16_t SocketImageBuffer[80*60];
+
+
+sys_mutex_t CameraBufferMutex;
+int ColdBaby = 0;
 
 static struct tcp_pcb *ControlTCPServer = NULL;
 static int ControlConnections = 0;
+
+static void CaptureCameraImage()
+{
+	FLIR_Lipton_CaptureImage(CameraBuffer);
+
+	sys_mutex_lock(&CameraBufferMutex);
+
+	int i = 0;
+	for(int y = 0; y < 60; y++)
+		for(int x = 1; x < 41; x++)
+		{
+			SocketImageBuffer[i] = (uint16_t)((CameraBuffer[x][y] & 0xFFFF0000) >> 16);
+			i++;
+			SocketImageBuffer[i] = (uint16_t)(CameraBuffer[x][y] & 0x0000FFFF);
+			i++;
+		}
+	sys_mutex_unlock(&CameraBufferMutex);
+}
 
 static void Control_Close_conn(struct tcp_pcb *pcb)
 {
@@ -32,9 +56,11 @@ static err_t Control_recv(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t 
 			if ( !(strstr(p->payload, "680900") == NULL) )
 			{
 				printf("Capturing Image\n");
-				FLIR_Lipton_CaptureImage(CameraBuffer);
+				CaptureCameraImage();
 				printf("Sending Image\n");
-				tcp_write(ControlTCPServer,CameraBuffer,sizeof(CameraBuffer), 0);
+				tcp_write(ControlTCPServer,SocketImageBuffer,9600, 0);
+				printf("Sent\n");
+				tcp_output(ControlTCPServer);
 			}
 		}
 		pbuf_free(p);
@@ -81,11 +107,67 @@ err_t Control_accept(void *arg, struct tcp_pcb *pcb, err_t err)
 	return ERR_OK;
 }
 
+
+void MeasureBabyTask(void *pvParameters)
+{
+	while(1)
+	{
+		vTaskDelayMs(5000);
+
+		CaptureCameraImage();
+
+		sys_mutex_lock(&CameraBufferMutex);
+
+		double ave = 0;
+		int j = 0;
+		int f = 0;
+
+		for(j = 0; j < 4800; j++)
+		{
+			if (SocketImageBuffer[j] >= 8200)
+			{
+				ave += SocketImageBuffer[j];
+				f++;
+			}
+		}
+
+		if (f > 0)
+		{
+			printf("%d\n",f);
+			ave /= f;
+			printf("%d\n", (int) ave);
+
+			if ((f >60) && (f < 800))
+			{//we have baby
+				printf("Baby!!!\n");
+				if (ave < 8340)
+					//we have a cold baby
+					Alarm_ON();
+				else
+					Alarm_OFF();
+
+
+			}
+			else
+				Alarm_OFF();
+
+		}
+		else
+			Alarm_OFF();
+
+		sys_mutex_unlock(&CameraBufferMutex);
+
+		if (AlarmIsOn)
+			printf("Alarm On\n");
+		else
+			printf("Alarm Off\n");
+
+	}
+}
 //crate and socket listen, loop forever
 //accepting incoming sockets
 void ControlCreateSocketTask(void *pvParameters)
 {
-	printf("Control Socket Task Start\n");
 	struct tcp_pcb *ptel_pcb;
 	ptel_pcb = tcp_new();//create new TCP socket
 

@@ -36,12 +36,13 @@ void user_init()
 	system_set_os_print(1);
 
 	//set CPU clock frequency to 160Mhz
-	sdk_os_update_cpu_frequency(160);
+	//sdk_os_update_cpu_frequency(160);
 
 	//create a mutex for the SPI port
 	//so the display and the camera
 	//don't step on each other
 	sys_mutex_new(&SPI_Mutex);
+	sys_mutex_new(&CameraBufferMutex);
 
 	//yet another bug workaround, we need to make sure the station is disconnected before
 	//we allow the user to initiate a AP scan or we be crashing bang, boom, ding, bing, bong...
@@ -101,7 +102,6 @@ void user_init()
 	gpio_write(GPIO_SPEAKER,0);
 
 	gpio_enable(GPIO_Camera_CS,GPIO_OUTPUT);
-	gpio_write(GPIO_Camera_CS, 1);//de-select camera
 
 	//Generate pushbutton events on both rising and
 	//lowering edge so we can calculate time of
@@ -115,6 +115,7 @@ void user_init()
 
 	//xTaskCreate(ButtonTask, (signed char *)"ButtonEventQueueHandler", 512, NULL, 2, NULL);//Push Button monitor thread
 	xTaskCreate(ControlCreateSocketTask, (signed char *)"ControlTCP", 512, NULL, 2, NULL);//Control socket thread
+	xTaskCreate(MeasureBabyTask, (signed char *)"MeasureBabyTask", 512, NULL, 2, NULL);//Control socket thread
 }
 
 

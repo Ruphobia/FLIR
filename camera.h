@@ -3,10 +3,11 @@
 
 #include "headers.h"
 
-extern uint16_t CameraBuffer[4800];
-
+extern FLIRBuffer CameraBuffer;
+extern sys_mutex_t CameraBufferMutex;
 void InitCamera();
 void CaptureImage();
 void ControlCreateSocketTask(void *pvParameters);
+void MeasureBabyTask(void *pvParameters);
 
 #endif
