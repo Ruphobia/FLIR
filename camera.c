@@ -110,9 +110,11 @@ err_t Control_accept(void *arg, struct tcp_pcb *pcb, err_t err)
 
 void MeasureBabyTask(void *pvParameters)
 {
+	Adafruit_Sharpmemory_Display_Setrotation(2);
+
 	while(1)
 	{
-		vTaskDelayMs(5000);
+		vTaskDelayMs(30);
 
 		CaptureCameraImage();
 
@@ -122,14 +124,30 @@ void MeasureBabyTask(void *pvParameters)
 		int j = 0;
 		int f = 0;
 
-		for(j = 0; j < 4800; j++)
-		{
-			if (SocketImageBuffer[j] >= 8200)
+		Adafruit_Sharpmemory_Display_Clear();
+		Adafruit_Sharpmemory_Display_drawLine(7,0,88,0,0);
+		Adafruit_Sharpmemory_Display_drawLine(7,61,88,61,0);
+		Adafruit_Sharpmemory_Display_drawLine(7,0,7,61,0);
+		Adafruit_Sharpmemory_Display_drawLine(88,0,88,61,0);
+		//for(j = 0; j < 4800; j++)
+		for(int y = 0; y < 60; y++)
+			for(int x = 0; x < 80; x++)
 			{
-				ave += SocketImageBuffer[j];
-				f++;
+				if (SocketImageBuffer[j] >= 8200)
+				{
+					ave += SocketImageBuffer[j];
+					Adafruit_Sharpmemory_Display_drawPixel(x+8,y+1,0);
+					f++;
+				}
+				j++;
 			}
-		}
+
+
+		Adafruit_Sharpmemory_Display_drawChar(5, 70, 72,0, 1, 2);
+		Adafruit_Sharpmemory_Display_drawChar(5+12, 70, 72,0, 1, 2);
+
+
+		Adafruit_Sharpmemory_Display_refresh();
 
 		if (f > 0)
 		{

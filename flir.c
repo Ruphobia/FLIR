@@ -91,9 +91,6 @@ void user_init()
 	sdk_wifi_station_set_config(&config);
 	sdk_wifi_station_disconnect();
 
-	//init the queue for button press events
-	ButtonQueue = xQueueCreate(10, sizeof(uint32_t));
-
 	gpio_enable(GPIO_PB1, GPIO_INPUT);//push button 1
 	//gpio_enable(GPIO_LED, GPIO_OUTPUT);//LED (leave disabled during debugging, shares UART0 TXD
 	//gpio_write(GPIO_LED,0);
@@ -103,19 +100,12 @@ void user_init()
 
 	gpio_enable(GPIO_Camera_CS,GPIO_OUTPUT);
 
-	//Generate pushbutton events on both rising and
-	//lowering edge so we can calculate time of
-	//button presses for denouncing and determine
-	//short press VS long press.  The event
-	//handler is located in Chontrol.c
-	gpio_set_interrupt(0, GPIO_INTTYPE_EDGE_ANY);
-
 	Adafruit_Sharpmemory_Display_Init(GPIO_DISPLAY_CS,&SPI_Mutex);
 	FLIR_Lipton_Init(GPIO_Camera_CS, &SPI_Mutex);
 
-	//xTaskCreate(ButtonTask, (signed char *)"ButtonEventQueueHandler", 512, NULL, 2, NULL);//Push Button monitor thread
 	xTaskCreate(ControlCreateSocketTask, (signed char *)"ControlTCP", 512, NULL, 2, NULL);//Control socket thread
 	xTaskCreate(MeasureBabyTask, (signed char *)"MeasureBabyTask", 512, NULL, 2, NULL);//Control socket thread
+
 }
 
 
