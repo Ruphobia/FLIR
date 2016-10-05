@@ -26,6 +26,8 @@ https://github.com/adafruit/Adafruit-GFX-Library
 
 https://github.com/SuperHouse/esp-open-rtos
 
+https://groups.google.com/forum/#!topic/flir-lepton/MhCsyeY4HY0
+
 https://github.com/pfalcon/esp-open-sdk
 
 https://github.com/Ruphobia/mydev-esp-open-rtos
