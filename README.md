@@ -42,6 +42,8 @@ https://groups.google.com/forum/#!topic/flir-lepton/MCy66OHf0l4
 
 http://www.electricstuff.co.uk/lepton.html
 
+https://github.com/groupgets/LeptonModule/blob/master/software/arduino_i2c/Lepton.ino
+
 
 # TODO
 
