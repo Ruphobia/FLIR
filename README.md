@@ -26,6 +26,8 @@ https://github.com/adafruit/Adafruit-GFX-Library
 
 https://github.com/SuperHouse/esp-open-rtos
 
+https://groups.google.com/forum/#!topic/flir-lepton/MhCsyeY4HY0
+
 https://github.com/pfalcon/esp-open-sdk
 
 https://github.com/Ruphobia/mydev-esp-open-rtos
@@ -39,6 +41,8 @@ https://groups.google.com/forum/#!forum/flir-lepton
 https://groups.google.com/forum/#!topic/flir-lepton/MCy66OHf0l4
 
 http://www.electricstuff.co.uk/lepton.html
+
+https://github.com/groupgets/LeptonModule/blob/master/software/arduino_i2c/Lepton.ino
 
 
 # TODO
