@@ -11,12 +11,12 @@ void frc1_interrupt_handler(void)
 	if (buzzerInterval <= 2400)
 	{
 		gpio_toggle(GPIO_SPEAKER);
-		//gpio_write(GPIO_LED, 1);
+		gpio_write(GPIO_LED, 1);
 	}
 	else
 	{
 		gpio_write(GPIO_SPEAKER,0);
-		//gpio_write(GPIO_LED, 0);
+		gpio_write(GPIO_LED, 0);
 		if (buzzerInterval >= 4800)
 			buzzerInterval = 0;
 	}
@@ -30,7 +30,7 @@ void Alarm_OFF()
 		timer_set_run(FRC1, false);
 		AlarmIsOn = false;
 		gpio_write(GPIO_SPEAKER,0);
-		//gpio_write(GPIO_LED, 0);
+		gpio_write(GPIO_LED, 0);
 	}
 }
 void Alarm_ON()

@@ -33,7 +33,7 @@ void user_init()
 {
 	//disable system debug printing to
 	//UART0
-	system_set_os_print(1);
+	system_set_os_print(0);
 
 	//set CPU clock frequency to 160Mhz
 	//sdk_os_update_cpu_frequency(160);
@@ -92,13 +92,15 @@ void user_init()
 	sdk_wifi_station_disconnect();
 
 	gpio_enable(GPIO_PB1, GPIO_INPUT);//push button 1
-	//gpio_enable(GPIO_LED, GPIO_OUTPUT);//LED (leave disabled during debugging, shares UART0 TXD
-	//gpio_write(GPIO_LED,0);
+	gpio_enable(GPIO_LED, GPIO_OUTPUT);//LED (leave disabled during debugging, shares UART0 TXD
+	gpio_write(GPIO_LED,0);
 
 	gpio_enable(GPIO_SPEAKER, GPIO_OUTPUT);//Speaker
 	gpio_write(GPIO_SPEAKER,0);
 
 	gpio_enable(GPIO_Camera_CS,GPIO_OUTPUT);
+
+	i2c_init(5,4);
 
 	Adafruit_Sharpmemory_Display_Init(GPIO_DISPLAY_CS,&SPI_Mutex);
 	FLIR_Lipton_Init(GPIO_Camera_CS, &SPI_Mutex);

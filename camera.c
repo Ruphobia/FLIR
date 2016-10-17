@@ -1,3 +1,4 @@
+#include "headers.h"
 #include "camera.h"
 #include "userinterface.h"
 
@@ -15,6 +16,26 @@ static void CaptureCameraImage()
 {
 	FLIR_Lipton_CaptureImage(CameraBuffer);
 
+	uint8_t commandID = 0x10 >> 2;
+	uint8_t command = GET;
+	uint8_t buffer[2];
+	uint8_t ob[4];
+
+	ob[0] = 0x00;
+	ob[1] = 0x04;
+	ob[2] = 0x02;
+	ob[3] = ((commandID << 2 ) & 0xfc) | (command & 0x3);
+
+	i2c_slave_write(ADDRESS,ob,4);
+	i2c_slave_word_read(ADDRESS, 8,buffer, 2);
+
+	double k = (buffer[0] << 8) + buffer[1];
+
+	k /= 100;
+	k = k - 273.15;
+
+	printf("Camera: %fC,%fF\n",k,(k*1.8)+32);
+
 	sys_mutex_lock(&CameraBufferMutex);
 
 	int i = 0;
@@ -26,6 +47,13 @@ static void CaptureCameraImage()
 			SocketImageBuffer[i] = (uint16_t)(CameraBuffer[x][y] & 0x0000FFFF);
 			i++;
 		}
+
+	for(int j = 0; j < 80*60; j++)
+	{
+		double vv = SocketImageBuffer[j];
+		vv = ((0.0217 * vv) + k - 177.77) * 100;
+		SocketImageBuffer[j] = (uint16_t)vv;
+	}
 	sys_mutex_unlock(&CameraBufferMutex);
 }
 
@@ -111,12 +139,17 @@ err_t Control_accept(void *arg, struct tcp_pcb *pcb, err_t err)
 void MeasureBabyTask(void *pvParameters)
 {
 	Adafruit_Sharpmemory_Display_Setrotation(2);
+	double avgtmp = 40.7;
+	unsigned char tmpoutput[30];
+
+
 
 	while(1)
 	{
-		vTaskDelayMs(30);
+		vTaskDelayMs(10);
 
 		CaptureCameraImage();
+
 
 		sys_mutex_lock(&CameraBufferMutex);
 
@@ -133,9 +166,9 @@ void MeasureBabyTask(void *pvParameters)
 		for(int y = 0; y < 60; y++)
 			for(int x = 0; x < 80; x++)
 			{
-				if (SocketImageBuffer[j] >= 8200)
+				if ((SocketImageBuffer[j] / 100) >= 29)
 				{
-					ave += SocketImageBuffer[j];
+					ave += (SocketImageBuffer[j] /100);
 					Adafruit_Sharpmemory_Display_drawPixel(x+8,y+1,0);
 					f++;
 				}
@@ -143,8 +176,8 @@ void MeasureBabyTask(void *pvParameters)
 			}
 
 
-		Adafruit_Sharpmemory_Display_drawChar(5, 70, 72,0, 1, 2);
-		Adafruit_Sharpmemory_Display_drawChar(5+12, 70, 72,0, 1, 2);
+		//Adafruit_Sharpmemory_Display_drawChar(5, 70, 72,0, 1, 2);
+		//Adafruit_Sharpmemory_Display_drawChar(5+12, 70, 72,0, 1, 2);
 
 
 		Adafruit_Sharpmemory_Display_refresh();
@@ -157,12 +190,22 @@ void MeasureBabyTask(void *pvParameters)
 
 			if ((f >60) && (f < 800))
 			{//we have baby
+
+				Adafruit_Sharpmemory_Display_drawChar(70, 63, 66,0, 1, 2);
 				printf("Baby!!!\n");
-				if (ave < 8340)
+				if (ave < 32)
 					//we have a cold baby
+				{
 					Alarm_ON();
+					Adafruit_Sharpmemory_Display_drawChar(70,  63+15,67,0, 1, 2);
+				}
 				else
+				{
 					Alarm_OFF();
+					Adafruit_Sharpmemory_Display_drawChar(70,  63+15,87,0, 1, 2);
+				}
+
+
 
 
 			}
@@ -172,6 +215,29 @@ void MeasureBabyTask(void *pvParameters)
 		}
 		else
 			Alarm_OFF();
+
+		avgtmp = ave;
+
+		sprintf(tmpoutput,"%02.1fC", avgtmp);
+
+		int xx = 2;
+		for(int kk = 0; kk < strlen(tmpoutput);kk++)
+		{
+			Adafruit_Sharpmemory_Display_drawChar(xx, 63, tmpoutput[kk],0, 1, 2);
+			xx+=12;
+		}
+
+		memset(tmpoutput,0,30);
+
+		sprintf(tmpoutput,"%02.1fF", (avgtmp * 1.8) + 32 );
+		xx = 2;
+		for(int kk = 0; kk < strlen(tmpoutput);kk++)
+		{
+			Adafruit_Sharpmemory_Display_drawChar(xx, 63+15, tmpoutput[kk],0, 1, 2);
+			xx+=12;
+		}
+
+		Adafruit_Sharpmemory_Display_refresh();
 
 		sys_mutex_unlock(&CameraBufferMutex);
 
