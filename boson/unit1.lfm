@@ -1,10 +1,10 @@
 object Form1: TForm1
   Left = 471
-  Height = 566
+  Height = 596
   Top = 175
   Width = 442
   Caption = 'BOSON 320 Capture'
-  ClientHeight = 566
+  ClientHeight = 596
   ClientWidth = 442
   OnCreate = FormCreate
   LCLVersion = '1.8.0.6'
@@ -34,7 +34,7 @@ object Form1: TForm1
     ParentColor = False
   end
   object SpeedButton1: TSpeedButton
-    Left = 264
+    Left = 319
     Height = 38
     Top = 264
     Width = 112
@@ -111,7 +111,7 @@ object Form1: TForm1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 16
-    Top = 550
+    Top = 580
     Width = 442
     Panels = <>
   end
@@ -124,13 +124,41 @@ object Form1: TForm1
     ParentColor = False
   end
   object isrecording: TShape
-    Left = 208
+    Left = 264
     Height = 38
     Top = 264
     Width = 49
     Brush.Color = clRed
     Pen.Color = clRed
     Visible = False
+  end
+  object RadioButton1: TRadioButton
+    Left = 128
+    Height = 23
+    Top = 272
+    Width = 67
+    Caption = 'Record'
+    Checked = True
+    OnClick = RadioButton2Change
+    TabOrder = 6
+  end
+  object RadioButton2: TRadioButton
+    Left = 202
+    Height = 23
+    Top = 272
+    Width = 50
+    Caption = 'Play'
+    OnChange = RadioButton2Change
+    TabOrder = 7
+  end
+  object SpeedButton2: TSpeedButton
+    Left = 319
+    Height = 38
+    Top = 264
+    Width = 112
+    Caption = 'Play Video'
+    Visible = False
+    OnClick = SpeedButton2Click
   end
   object camera: TSdpoVideo4L2
     Active = False
@@ -149,5 +177,12 @@ object Form1: TForm1
     OnTimer = Timer1Timer
     left = 256
     top = 496
+  end
+  object OpenDialog1: TOpenDialog
+    DefaultExt = '.dat'
+    FileName = '*.dat'
+    Filter = 'VIdeo Files|*.dat'
+    left = 320
+    top = 392
   end
 end

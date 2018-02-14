@@ -36,14 +36,20 @@ type
     Label7: TLabel;
     Memo1: TMemo;
     isrecording: TShape;
+    OpenDialog1: TOpenDialog;
+    RadioButton1: TRadioButton;
+    RadioButton2: TRadioButton;
     SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
     StatusBar1: TStatusBar;
     Timer1: TTimer;
     procedure cameraFrame(Sender: TObject; FramePtr: PByte);
     procedure FormCreate(Sender: TObject);
     procedure Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
       );
+    procedure RadioButton2Change(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
 
@@ -62,6 +68,9 @@ var
   dt : string;
   camerafilemutex : TRTLCriticalSection;
   VideoCapture : boolean = false;
+  VideoPlaying : boolean = false;
+  imagex : integer = -1;
+  imagey : integer = -1;
 
 implementation
 
@@ -85,7 +94,25 @@ begin
   //when we move the mouse over the video, show the raw
   //pixel values; not much use until we get our calibration
   //system done
-  label2.caption := inttostr(RawVideoFrame[x,y]);
+  imagex := x;
+  imagey := y;
+
+end;
+
+procedure TForm1.RadioButton2Change(Sender: TObject);
+begin
+  if radiobutton2.Checked then
+  begin
+    speedbutton1.visible := false;
+    speedbutton2.visible := true;
+
+  end
+  else
+  begin
+    speedbutton1.visible := true;
+    speedbutton2.visible := false;
+
+  end;
 end;
 
 procedure TForm1.SpeedButton1Click(Sender: TObject);
@@ -93,12 +120,15 @@ begin
   try
   //get a lock on the camera file mutex
   EnterCriticalSection(camerafilemutex);
+
   //if we are starting a capture go here :P
   if SpeedButton1.Caption = 'Start Capture' then
   begin
     //make sure we have at least a name
     if (length(edit1.Text)> 0) then
     begin
+      RadioBUtton1.Visible:=false;
+      RadioBUtton2.Visible:=false;
       //change status to stop capture
       SpeedButton1.Caption := 'Stop Capture';
       //make a directory name based on session and date/time
@@ -122,6 +152,9 @@ begin
     VideoCapture := false;
     closefile(filvar);//close and flush our video file
 
+    RadioBUtton1.Visible:=true;
+    RadioBUtton2.Visible:=true;
+
     //append seesion info to the notes
     memo1.lines.add('Session Name:' + edit1.text);
     memo1.lines.add('AmbTemp:' + edit2.text);
@@ -139,6 +172,41 @@ begin
 
   finally
     LeaveCriticalSection(camerafilemutex);
+  end;
+end;
+
+procedure TForm1.SpeedButton2Click(Sender: TObject);
+begin
+  if speedbutton2.Caption = 'Play Video' then
+  begin
+    if OpenDialog1.Execute then
+    begin
+      try
+        EnterCriticalSection(camerafilemutex);
+        RadioBUtton1.Visible:=false;
+        RadioBUtton2.Visible:=false;
+        assignfile(filvar,opendialog1.FileName);
+        reset(filvar);
+        speedbutton2.caption := 'Stop';
+        VideoPlaying := true;
+      finally
+        LeaveCriticalSection(camerafilemutex);
+      end;
+    end;
+
+  end
+  else
+  begin
+    try
+    EnterCriticalSection(camerafilemutex);
+    RadioBUtton1.Visible:=true;
+    RadioBUtton2.Visible:=true;
+    speedbutton2.Caption := 'Play Video';
+    closefile(filvar);
+    VideoPlaying := false;
+    finally
+      LeaveCriticalSection(camerafilemutex);
+    end;
   end;
 end;
 
@@ -166,7 +234,7 @@ var
   d : dword;
   pp : pbyte;
   min,max : word;
-
+  rr : integer;
 
 begin
   try
@@ -174,25 +242,57 @@ begin
   //start off the min/max search
   min := $FFFF;
   max := 0;
-  //capture the incomming video frame @60Hz
-  for y := 0 to 255 do
-    for x := 0 to 319 do
-      begin
-        RawVideoFrame[x,y] := FramePtr^;//get low byte
-        inc(FramePtr);
-        //get high byte
-        RawVideoFrame[x,y] := RawVideoFrame[x,y] + (FramePtr^ shl 8);
-        inc(FramePtr);
-        //record min/max values for display AGC
-        //get min
-        if RawVideoFrame[x,y] < min then
-          min := RawVideoFrame[x,y];
 
-        //get max
-        if RawVideoFrame[x,y] > max then
-          max := RawVideoFrame[x,y];
-      end;
+  //if we are playing back a video we go here
+  //this is crapppy as we need a better time source for playing back the video
+  //for this implementation we are using the time-sync from the camera
+  //thus requiringinging the camera to be pluged in :(
+  if VideoPlaying then
+  begin
+    //attempt to read the next video frame
+    blockread(filvar, RawVideoFrame,1,rr);
+    //if we reach the end of the file, start over
+    //and keep looping until we stop
+    if rr <> 1 then
+    begin
+      reset(filvar);
+      blockread(filvar, RawVideoFrame,1,rr);
+    end;
 
+    //find min and max for fake AGC on display
+    for y := 0 to 255 do
+      for x := 0 to 319 do
+        begin
+          //get min
+          if RawVideoFrame[x,y] < min then
+            min := RawVideoFrame[x,y];
+
+          //get max
+          if RawVideoFrame[x,y] > max then
+            max := RawVideoFrame[x,y];
+        end;
+  end
+  else
+  begin
+    //capture the incomming video frame @60Hz
+    for y := 0 to 255 do
+      for x := 0 to 319 do
+        begin
+          RawVideoFrame[x,y] := FramePtr^;//get low byte
+          inc(FramePtr);
+          //get high byte
+          RawVideoFrame[x,y] := RawVideoFrame[x,y] + (FramePtr^ shl 8);
+          inc(FramePtr);
+          //record min/max values for display AGC
+          //get min
+          if RawVideoFrame[x,y] < min then
+            min := RawVideoFrame[x,y];
+
+          //get max
+          if RawVideoFrame[x,y] > max then
+            max := RawVideoFrame[x,y];
+        end;
+  end;
   //write video frame to disk if we have enabled
   //capture
   if (VideoCapture) then
@@ -233,6 +333,9 @@ begin
           pp^ := d;
           inc(pp);
       end;
+
+    if ((imagex <> -1) and (imagey <> -1))  then
+      label2.caption := 'raw:' + inttostr(RawVideoFrame[imagex,imagey]);
 
   end;
   //finish up the update

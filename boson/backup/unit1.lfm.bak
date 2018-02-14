@@ -1,0 +1,188 @@
+object Form1: TForm1
+  Left = 471
+  Height = 596
+  Top = 175
+  Width = 442
+  Caption = 'BOSON 320 Capture'
+  ClientHeight = 596
+  ClientWidth = 442
+  OnCreate = FormCreate
+  LCLVersion = '1.8.0.6'
+  object Image1: TImage
+    Left = 56
+    Height = 256
+    Top = 0
+    Width = 320
+    OnMouseMove = Image1MouseMove
+    StretchOutEnabled = False
+    StretchInEnabled = False
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 14
+    Top = 264
+    Width = 26
+    Caption = '0fps'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 8
+    Height = 14
+    Top = 280
+    Width = 25
+    Caption = 'raw:'
+    ParentColor = False
+  end
+  object SpeedButton1: TSpeedButton
+    Left = 264
+    Height = 38
+    Top = 264
+    Width = 112
+    Caption = 'Start Capture'
+    OnClick = SpeedButton1Click
+  end
+  object Edit1: TEdit
+    Left = 8
+    Height = 26
+    Top = 304
+    Width = 190
+    TabOrder = 0
+  end
+  object Edit2: TEdit
+    Left = 8
+    Height = 26
+    Top = 332
+    Width = 190
+    TabOrder = 1
+  end
+  object Label4: TLabel
+    Left = 208
+    Height = 14
+    Top = 336
+    Width = 223
+    Caption = 'Ambient Temperature (include units)'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 208
+    Height = 14
+    Top = 308
+    Width = 84
+    Caption = 'Session Name'
+    ParentColor = False
+  end
+  object Edit3: TEdit
+    Left = 8
+    Height = 26
+    Top = 360
+    Width = 190
+    TabOrder = 2
+  end
+  object Label5: TLabel
+    Left = 208
+    Height = 14
+    Top = 364
+    Width = 218
+    Caption = 'Subject Temperature (include units)'#10
+    ParentColor = False
+  end
+  object Edit4: TEdit
+    Left = 8
+    Height = 26
+    Top = 388
+    Width = 190
+    TabOrder = 3
+  end
+  object Label6: TLabel
+    Left = 208
+    Height = 14
+    Top = 392
+    Width = 55
+    Caption = 'Humidity'
+    ParentColor = False
+  end
+  object Memo1: TMemo
+    Left = 8
+    Height = 100
+    Top = 440
+    Width = 423
+    TabOrder = 4
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 16
+    Top = 580
+    Width = 442
+    Panels = <>
+  end
+  object Label7: TLabel
+    Left = 8
+    Height = 14
+    Top = 420
+    Width = 38
+    Caption = 'Notes:'
+    ParentColor = False
+  end
+  object isrecording: TShape
+    Left = 208
+    Height = 38
+    Top = 264
+    Width = 49
+    Brush.Color = clRed
+    Pen.Color = clRed
+    Visible = False
+  end
+  object RadioButton1: TRadioButton
+    Left = 54
+    Height = 23
+    Top = 271
+    Width = 67
+    Caption = 'Record'
+    Checked = True
+    OnClick = RadioButton2Change
+    TabOrder = 6
+  end
+  object RadioButton2: TRadioButton
+    Left = 128
+    Height = 23
+    Top = 271
+    Width = 50
+    Caption = 'Play'
+    OnChange = RadioButton2Change
+    TabOrder = 7
+  end
+  object SpeedButton2: TSpeedButton
+    Left = 296
+    Height = 38
+    Top = 264
+    Width = 112
+    Caption = 'Play Video'
+    Visible = False
+    OnClick = SpeedButton2Click
+  end
+  object camera: TSdpoVideo4L2
+    Active = False
+    Device = '/dev/video1'
+    Width = 320
+    Height = 256
+    FrameRate = 25
+    BayerMode = False
+    PixelFormat = uvcpf_YUYV
+    UseLibV4l = False
+    OnFrame = cameraFrame
+    left = 184
+    top = 496
+  end
+  object Timer1: TTimer
+    OnTimer = Timer1Timer
+    left = 256
+    top = 496
+  end
+  object OpenDialog1: TOpenDialog
+    DefaultExt = '.dat'
+    FileName = '*.dat'
+    Filter = 'VIdeo Files|*.dat'
+    left = 320
+    top = 392
+  end
+end
