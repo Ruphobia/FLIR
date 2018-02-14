@@ -1,0 +1,6 @@
+inital test of capture software, still need calibration
+CameraTestRAW_16_30-12-99 00:15:07
+Session Name:CameraTestRAW_16
+AmbTemp:73.59F
+Subject Temp:no subject
+Humidity:where's the sensor?
