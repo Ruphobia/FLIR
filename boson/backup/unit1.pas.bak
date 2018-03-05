@@ -36,11 +36,14 @@ type
     Label7: TLabel;
     Memo1: TMemo;
     isrecording: TShape;
+    Memo2: TMemo;
     OpenDialog1: TOpenDialog;
     RadioButton1: TRadioButton;
     RadioButton2: TRadioButton;
+    ROI: TShape;
     SpeedButton1: TSpeedButton;
     SpeedButton2: TSpeedButton;
+    SpeedButton3: TSpeedButton;
     StatusBar1: TStatusBar;
     Timer1: TTimer;
     procedure cameraFrame(Sender: TObject; FramePtr: PByte);
@@ -50,6 +53,7 @@ type
     procedure RadioButton2Change(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure SpeedButton3Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
 
@@ -67,10 +71,13 @@ var
   filvar : file of TFILR_videoframetype;
   dt : string;
   camerafilemutex : TRTLCriticalSection;
+  CenterPointMutex : TRTLCriticalSection;
   VideoCapture : boolean = false;
   VideoPlaying : boolean = false;
   imagex : integer = -1;
   imagey : integer = -1;
+  CaptureCal : boolean = false;
+  CenterPoint : word;
 
 implementation
 
@@ -82,10 +89,14 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   //init the mutex for video capture file access
   InitCriticalSection(camerafilemutex);
+  //init the mutex for capturing center point over time
+  InitCriticalSection(CenterPointMutex);
   //start the video capture; requires that the thermal camera
   //is already plugged in and at /dev/video1
   //video0 should be the built-in laptop camera
   camera.Active:=true;
+  roi.Left := (320 div 2) - (roi.width div 2);
+  roi.top := (256 div 2) - (roi.height div 2);
 end;
 
 procedure TForm1.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -210,7 +221,14 @@ begin
   end;
 end;
 
+procedure TForm1.SpeedButton3Click(Sender: TObject);
+begin
+  CaptureCal := true;
+end;
+
 procedure TForm1.Timer1Timer(Sender: TObject);
+var
+  s : string;
 begin
   //display our fps counter @ 1hz
   label1.caption := inttostr(fcounter) + 'fps';
@@ -226,6 +244,18 @@ begin
   end
   else
   isrecording.Visible:=false;
+
+  //print out center point to watch for drift over time
+  try
+    EnterCriticalSection(CenterPointMutex);
+    CenterPoint := RawVideoFrame[160,128];
+    s := timetostr(time) + ',' + inttostr(CenterPoint);
+    memo2.lines.add(s);
+  finally
+    LeaveCriticalSection(CenterPointMutex);
+  end;
+
+
 end;
 
 procedure TForm1.cameraFrame(Sender: TObject; FramePtr: PByte);
@@ -235,6 +265,8 @@ var
   pp : pbyte;
   min,max : word;
   rr : integer;
+  temp : double;
+  s : string;
 
 begin
   try
@@ -335,14 +367,39 @@ begin
       end;
 
     if ((imagex <> -1) and (imagey <> -1))  then
-      label2.caption := 'raw:' + inttostr(RawVideoFrame[imagex,imagey]);
+    begin
+      temp := RawVideoFrame[imagex,imagey] / 640.664788102;
+      label2.caption := 'raw:' + FloatToStrF(temp,ffFixed,8,2);
+    end;
 
   end;
   //finish up the update
   image1.picture.bitmap.EndUpdate();
 
+  //write calibration image from ROI
+  if (CaptureCal) then
+  begin
+    //loop through ROI area and grab raw data for calibration
+    for y := ((image1.height div 2) - (ROI.height div 2)) to ((image1.height div 2) + (ROI.height div 2)) do
+      for x := ((image1.width div 2) - (ROI.width div 2)) to ((image1.width div 2) + (ROI.width div 2)) do
+        begin
+          //output CSV for xport
+          s := inttostr(x) + ',' + inttostr(y) + ',' + inttostr(RawVideoFrame[x,y]);
+          memo1.lines.add(s);
+        end;
+    CaptureCal := false;
+  end;
+
   finally
     LeaveCriticalSection(camerafilemutex);
+  end;
+
+  //capture center point so we can track over time
+  try
+    EnterCriticalSection(CenterPointMutex);
+    CenterPoint := RawVideoFrame[160,128];
+  finally
+    LeaveCriticalSection(CenterPointMutex);
   end;
 end;
 
