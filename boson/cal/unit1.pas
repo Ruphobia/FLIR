@@ -1,0 +1,161 @@
+unit Unit1;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons,
+  StdCtrls;
+
+type
+
+  { TForm1 }
+
+  TForm1 = class(TForm)
+    Label1: TLabel;
+    Memo1: TMemo;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
+    procedure SpeedButton1Click(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
+    procedure SpeedButton3Click(Sender: TObject);
+  private
+
+  public
+
+  end;
+
+  TCalData = record
+    CalPoint : array[0..500] of double;
+    CalPointCount : array[0..500] of integer;
+    CalPointCal : array[0..500] of double;
+  end;
+
+
+  TCalType = record
+    CameraTemperature : integer;
+    RawADC : word;
+    actualtemp : integer;
+  end;
+
+var
+  Form1: TForm1;
+  cd : array[0..500] of TCalData;
+
+implementation
+
+{$R *.lfm}
+
+{ TForm1 }
+
+procedure TForm1.SpeedButton1Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i : integer;
+  result : integer;
+begin
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if result = 1 then
+      inc(i);
+  until result = 0;
+  closefile(filvar);
+  label1.caption := inttostr(i);
+end;
+
+procedure TForm1.SpeedButton2Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i : integer;
+  result : integer;
+  s : string;
+  found : boolean;
+begin
+  memo1.lines.Clear;
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if (result = 1) then
+      begin
+        s := inttostr(k.actualtemp);
+        if memo1.lines.Count > 0 then
+          begin
+            found := false;
+            for i := 0 to memo1.lines.count -1 do
+            begin
+              if s = memo1.lines[i] then
+                found := true;
+            end;
+          end;
+        if found = false then
+          memo1.lines.add(s);
+      end;
+  until result = 0;
+  closefile(filvar);
+  label1.caption := inttostr(i);
+end;
+
+procedure TForm1.SpeedButton3Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i,j : integer;
+  result : integer;
+  kk : double;
+
+
+
+begin
+  kk := 0;
+  memo1.lines.clear;
+  for i := 0 to 500 do
+  begin
+    for j := 0 to 500 do
+    begin
+      cd[i].CalPoint[j] := 0;
+      cd[i].CalPointCount[j] := 0;
+      cd[i].CalPointCal[j] := 0;
+    end;
+  end;
+
+
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if result = 1 then
+      begin
+        cd[k.actualtemp].CalPoint[k.CameraTemperature] := cd[k.actualtemp].CalPoint[k.CameraTemperature] + k.RawADC;
+        inc(cd[k.actualtemp].CalPointCount[k.CameraTemperature]);
+      end;
+  until result = 0;
+  closefile(filvar);
+
+  for i := 0 to 500 do
+  begin
+    for j := 0 to 500 do
+    begin
+      if cd[i].CalPointCount[j] > 0 then
+        begin
+          cd[i].CalPoint[j] := cd[i].CalPoint[j] / cd[i].CalPointCount[j];
+          cd[i].CalPointCal[j] := i / cd[i].CalPoint[j];
+          memo1.lines.add(inttostr(i) + ',' + inttostr(j) + ',' + floattostr(cd[i].CalPoint[j]) +
+          ',' + floattostr(cd[i].CalPointCal[j]));
+        end;
+    end;
+  end;
+
+
+end;
+
+end.
+

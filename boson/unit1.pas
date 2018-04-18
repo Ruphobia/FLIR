@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  StdCtrls, Buttons, ComCtrls, SdpoVideo4L2, videodev2;
+  StdCtrls, Buttons, ComCtrls, Menus, SdpoVideo4L2, videodev2,Process;
 
 type
 
@@ -26,34 +26,53 @@ type
     Edit2: TEdit;
     Edit3: TEdit;
     Edit4: TEdit;
+    Edit5: TEdit;
     Image1: TImage;
+    Image2: TImage;
     Label1: TLabel;
+    Label10: TLabel;
+    Label11: TLabel;
+    Label12: TLabel;
+    Label13: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
     Label7: TLabel;
+    Label8: TLabel;
+    Label9: TLabel;
     Memo1: TMemo;
     isrecording: TShape;
     Memo2: TMemo;
+    Memo3: TMemo;
+    Memo4: TMemo;
     OpenDialog1: TOpenDialog;
     RadioButton1: TRadioButton;
     RadioButton2: TRadioButton;
+    RadioButton3: TRadioButton;
     ROI: TShape;
     SpeedButton1: TSpeedButton;
     SpeedButton2: TSpeedButton;
     SpeedButton3: TSpeedButton;
+    SpeedButton4: TSpeedButton;
+    SpeedButton5: TSpeedButton;
+    SpeedButton6: TSpeedButton;
     StatusBar1: TStatusBar;
     Timer1: TTimer;
     procedure cameraFrame(Sender: TObject; FramePtr: PByte);
     procedure FormCreate(Sender: TObject);
     procedure Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
       );
+    procedure RadioButton1Change(Sender: TObject);
     procedure RadioButton2Change(Sender: TObject);
+    procedure ROIChangeBounds(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure SpeedButton3Click(Sender: TObject);
+    procedure SpeedButton4Click(Sender: TObject);
+    procedure SpeedButton5Click(Sender: TObject);
+    procedure SpeedButton6Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
 
@@ -61,7 +80,19 @@ type
 
   end;
 
-  TFILR_videoframetype = array[0..319] of array[0..255] of word;
+  TFILR_videoframetype = array[0..320] of array[0..256] of word;
+
+  TCalType = record
+    CameraTemperature : integer;
+    RawADC : word;
+    actualtemp : integer;
+  end;
+
+  TCalData = record
+    CalPoint : array[0..500] of double;
+    CalPointCount : array[0..500] of integer;
+    CalPointCal : array[0..500] of double;
+  end;
 
 var
   Form1: TForm1;
@@ -79,6 +110,12 @@ var
   CaptureCal : boolean = false;
   CenterPoint : word;
   RuntimeSeconds : integer = 1;
+  calfilvar : file of TCalType;
+  CalOpen : boolean;
+  act : integer;
+  CALData : array[0..500] of TCalData;
+  CalLoaded : boolean = false;
+  lastfpatemp : integer = 0;
 
 implementation
 
@@ -97,7 +134,7 @@ begin
   //video0 should be the built-in laptop camera
   camera.Active:=true;
   roi.Left := (320 div 2) - (roi.width div 2);
-  roi.top := (256 div 2) - (roi.height div 2);
+  //roi.top := (256 div 2) - (roi.height div 2);
 end;
 
 procedure TForm1.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -111,20 +148,29 @@ begin
 
 end;
 
+procedure TForm1.RadioButton1Change(Sender: TObject);
+begin
+
+end;
+
 procedure TForm1.RadioButton2Change(Sender: TObject);
 begin
   if radiobutton2.Checked then
   begin
     speedbutton1.visible := false;
     speedbutton2.visible := true;
-
   end
   else
+  if radiobutton1.checked then
   begin
     speedbutton1.visible := true;
     speedbutton2.visible := false;
-
   end;
+end;
+
+procedure TForm1.ROIChangeBounds(Sender: TObject);
+begin
+
 end;
 
 procedure TForm1.SpeedButton1Click(Sender: TObject);
@@ -227,9 +273,146 @@ begin
   CaptureCal := true;
 end;
 
+procedure TForm1.SpeedButton4Click(Sender: TObject);
+begin
+  memo2.lines.clear;
+end;
+
+procedure TForm1.SpeedButton5Click(Sender: TObject);
+var
+  data : array[0..1000] of TCalType;
+  readrecords : integer;
+begin
+try
+  EnterCriticalSection(CenterPointMutex);
+  if CalOpen then
+  begin
+    CalOpen := false;
+    closefile(calfilvar);
+    speedbutton5.Caption := 'Record Cal';
+  end
+  else
+  begin
+    act := strtoint(edit5.Text);
+    speedbutton5.Caption := 'Stop Cal';
+    assignfile(calfilvar, 'calfile.data');
+    if fileexists('calfile.data') then
+      reset(calfilvar)
+    else
+      rewrite(calfilvar);
+    repeat
+      blockread(calfilvar,data,1000,readrecords);
+    until readrecords < 1000;
+    CalOpen := true;
+  end;
+finally
+   LeaveCriticalSection(CenterPointMutex);
+end;
+end;
+
+procedure TForm1.SpeedButton6Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i,j : integer;
+  result : integer;
+
+begin
+  for i := 0 to 500 do
+  begin
+    for j := 0 to 500 do
+    begin
+      CALData[i].CalPoint[j] := 0;
+      CALData[i].CalPointCount[j] := 0;
+      CALData[i].CalPointCal[j] := 0;
+    end;
+  end;
+
+
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if result = 1 then
+      begin
+        CALData[k.actualtemp].CalPoint[k.CameraTemperature] := CALData[k.actualtemp].CalPoint[k.CameraTemperature] + k.RawADC;
+        inc(CALData[k.actualtemp].CalPointCount[k.CameraTemperature]);
+      end;
+  until result = 0;
+  closefile(filvar);
+
+  for i := 0 to 500 do
+  begin
+    for j := 0 to 500 do
+    begin
+      if CALData[i].CalPointCount[j] > 0 then
+        begin
+          CALData[i].CalPoint[j] := CALData[i].CalPoint[j] / CALData[i].CalPointCount[j];
+          CALData[i].CalPointCal[j] := i / CALData[i].CalPoint[j];
+        end;
+    end;
+  end;
+
+  CalLoaded := true;
+end;
+
+function GetCalibratedValue(RAW : word; FPATemp : integer):double;
+var
+  RAWOffset,ROC : integer;
+  TempIndex     : integer;
+  CalIndex      : integer;
+
+  i, j : integer;
+  found : boolean;
+
+
+begin
+  found := false;
+  result := 0;
+
+  if FPATemp = 0 then
+    exit;
+
+  form1.memo4.lines.add('Start Search:' + inttostr(raw));
+
+  RAWOffset    := $FFFF;
+  TempIndex     := 0;
+
+  for i := 0 to 500 do
+    begin
+      if CalData[i].CalPointCount[FPATemp] > 0 then
+      begin
+        ROC := abs(raw-trunc(CalData[i].CalPoint[FPATemp]));
+        if ROC < RAWOffset then
+        begin
+          RAWOffset := ROC;
+          TempIndex := i;
+          found := true;
+          form1.memo4.lines.add('Found:' + inttostr(trunc(CalData[i].CalPoint[FPATemp])) + ',ROC:' + inttostr(ROC));
+        end;
+      end;
+    end;
+
+
+  if found then
+  begin
+    result := ((raw * CalData[TempIndex].CalPointCal[FPATemp]) / 10);
+    form1.memo4.lines.add('Done:' + FloatToStrF(result,ffFixed,8,1)+ 'C');
+  end;
+end;
+
 procedure TForm1.Timer1Timer(Sender: TObject);
 var
   s : string;
+  temp : double;
+  ss : ansistring;
+  y : integer;
+  x : integer;
+  data : TCalType;
+  byteswriten : integer;
+  centertemp : string;
+
 begin
   //display our fps counter @ 1hz
   label1.caption := inttostr(fcounter) + 'fps';
@@ -246,18 +429,54 @@ begin
   else
   isrecording.Visible:=false;
 
+
   //print out center point to watch for drift over time
   try
     EnterCriticalSection(CenterPointMutex);
-    CenterPoint := RawVideoFrame[160,128];
-    s := inttostr(RuntimeSeconds) + ',' + inttostr(CenterPoint);
-    inc(RuntimeSeconds);
-    memo2.lines.add(s);
+
+    if RunCommand('./rawBoson',['c00050030'],ss) then
+    if pos('Error',ss) = 0 then
+    begin
+      CenterPoint := RawVideoFrame[160,128];
+      s := inttostr(RuntimeSeconds) + ',' + inttostr(CenterPoint) + ',' + ss;
+      lastfpatemp := strtoint(ss);
+
+      if CalLoaded then
+      begin
+        centertemp := FloatToStrF(GetCalibratedValue(CenterPoint,lastfpatemp),ffFixed,8,1);
+        label8.caption := centertemp + 'C';
+        memo3.lines.add(centertemp + ',' + edit5.Caption + ',' + FloatToStrF(lastfpatemp/10,ffFixed,8,1));
+      end;
+
+      inc(RuntimeSeconds);
+      memo2.lines.add(s);
+      if CalOpen then
+      begin
+        data.actualtemp := act;
+        data.RawADC := CenterPoint;
+
+        blockwrite(calfilvar,data,1,byteswriten);
+      end;
+    end;
+
+    temp := CenterPoint / 640.664788102;
+    label2.caption := inttostr(CenterPoint) + ',' + FloatToStrF(temp,ffFixed,8,2);
+
+    if (imagex >= 0) and (imagey >= 0) and (imagex <= 319) and (imagey <= 255) then
+    begin
+      temp := RawVideoFrame[imagex,imagey];
+
+      begin
+        if CalLoaded then
+          temp := GetCalibratedValue(RawVideoFrame[imagex,imagey],lastfpatemp)
+        else
+          temp := temp / 640.664788102;
+        label13.caption := FloatToStrF(temp,ffFixed,8,1) + 'C';
+      end;
+    end;
   finally
     LeaveCriticalSection(CenterPointMutex);
   end;
-
-
 end;
 
 procedure TForm1.cameraFrame(Sender: TObject; FramePtr: PByte);
@@ -305,6 +524,8 @@ begin
           if RawVideoFrame[x,y] > max then
             max := RawVideoFrame[x,y];
         end;
+
+    label9.caption := FloatToStrF(RawVideoFrame[320,256] / 10,ffFixed,8,1)+ 'C';
   end
   else
   begin
@@ -326,6 +547,10 @@ begin
           if RawVideoFrame[x,y] > max then
             max := RawVideoFrame[x,y];
         end;
+
+     RawVideoFrame[320,256] := lastfpatemp;
+     label9.caption := FloatToStrF(RawVideoFrame[320,256] / 10,ffFixed,8,1)+ 'C';
+
   end;
   //write video frame to disk if we have enabled
   //capture
@@ -370,8 +595,8 @@ begin
 
     if ((imagex <> -1) and (imagey <> -1))  then
     begin
-      temp := RawVideoFrame[imagex,imagey] / 640.664788102;
-      label2.caption := 'raw:' + FloatToStrF(temp,ffFixed,8,2);
+      //temp := RawVideoFrame[imagex,imagey] / 640.664788102;
+      //label2.caption := 'raw:' + FloatToStrF(temp,ffFixed,8,2);
     end;
 
   end;
@@ -392,6 +617,16 @@ begin
     CaptureCal := false;
   end;
 
+   image2.picture.Clear;
+    s := '';
+    y := roi.top + (roi.height div 2);
+    for x := roi.left to roi.Left + roi.width do
+      begin
+        image2.canvas.Pixels[x-roi.left,255 - ((RawVideoFrame[x,y]- min) div ((max - min) div 220))] := clwhite;
+        s := s + inttostr(RawVideoFrame[x,y]) + ',';
+      end;
+    //memo2.lines.add(s);
+
   finally
     LeaveCriticalSection(camerafilemutex);
   end;
@@ -407,4 +642,185 @@ end;
 
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+unit Unit1;
+
+{$mode objfpc}{$H+}
+
+interface
+
+uses
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons,
+  StdCtrls;
+
+type
+
+  { TForm1 }
+
+  TForm1 = class(TForm)
+    Label1: TLabel;
+    Memo1: TMemo;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
+    procedure SpeedButton1Click(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
+    procedure SpeedButton3Click(Sender: TObject);
+  private
+
+  public
+
+  end;
+
+  TCalData = record
+    CalPoint : array[0..500] of double;
+    CalPointCount : array[0..500] of integer;
+    CalPointCal : array[0..500] of double;
+  end;
+
+
+  TCalType = record
+    CameraTemperature : integer;
+    RawADC : word;
+    actualtemp : integer;
+  end;
+
+var
+  Form1: TForm1;
+  cd : array[0..500] of TCalData;
+
+implementation
+
+{$R *.lfm}
+
+{ TForm1 }
+
+procedure TForm1.SpeedButton1Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i : integer;
+  result : integer;
+begin
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if result = 1 then
+      inc(i);
+  until result = 0;
+  closefile(filvar);
+  label1.caption := inttostr(i);
+end;
+
+procedure TForm1.SpeedButton2Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i : integer;
+  result : integer;
+  s : string;
+  found : boolean;
+begin
+  memo1.lines.Clear;
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if (result = 1) then
+      begin
+        s := inttostr(k.actualtemp);
+        if memo1.lines.Count > 0 then
+          begin
+            found := false;
+            for i := 0 to memo1.lines.count -1 do
+            begin
+              if s = memo1.lines[i] then
+                found := true;
+            end;
+          end;
+        if found = false then
+          memo1.lines.add(s);
+      end;
+  until result = 0;
+  closefile(filvar);
+  label1.caption := inttostr(i);
+end;
+
+procedure TForm1.SpeedButton3Click(Sender: TObject);
+var
+  filvar : file of TCalType;
+  k : TCalType;
+  i,j : integer;
+  result : integer;
+
+begin
+  memo1.lines.clear;
+  for i := 0 to 500 do
+  begin
+    for j := 0 to 500 do
+    begin
+      cd[i].CalPoint[j] := 0;
+      cd[i].CalPointCount[j] := 0;
+      cd[i].CalPointCal[j] := 0;
+    end;
+  end;
+
+
+  assignfile(filvar,'calfile.data');
+  reset(filvar);
+
+  repeat
+    blockread(filvar,k,1,result);
+    if result = 1 then
+      begin
+        cd[k.actualtemp].CalPoint[k.CameraTemperature] := cd[k.actualtemp].CalPoint[k.CameraTemperature] + k.RawADC;
+        inc(cd[k.actualtemp].CalPointCount[k.CameraTemperature]);
+      end;
+  until result = 0;
+  closefile(filvar);
+
+  for i := 0 to 500 do
+  begin
+    for j := 0 to 500 do
+    begin
+      if cd[i].CalPointCount[j] > 0 then
+        begin
+          cd[i].CalPoint[j] := cd[i].CalPoint[j] / cd[i].CalPointCount[j];
+          cd[i].CalPointCal[j] := i / cd[i].CalPoint[j];
+          memo1.lines.add(inttostr(i) + ',' + inttostr(j) + ',' + floattostr(cd[i].CalPoint[j]) +
+          ',' + floattostr(cd[i].CalPointCal[j]));
+        end;
+    end;
+  end;
+
+
+end;
+
+end.
+
 

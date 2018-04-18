@@ -1,11 +1,11 @@
 object Form1: TForm1
-  Left = 471
-  Height = 569
-  Top = 175
-  Width = 604
+  Left = 427
+  Height = 559
+  Top = 132
+  Width = 995
   Caption = 'BOSON 320 Capture'
-  ClientHeight = 569
-  ClientWidth = 604
+  ClientHeight = 559
+  ClientWidth = 995
   OnCreate = FormCreate
   LCLVersion = '1.8.0.6'
   object Image1: TImage
@@ -18,17 +18,17 @@ object Form1: TForm1
     StretchInEnabled = False
   end
   object Label1: TLabel
-    Left = 8
+    Left = 208
     Height = 14
-    Top = 264
+    Top = 420
     Width = 26
     Caption = '0fps'
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 8
+    Left = 104
     Height = 14
-    Top = 280
+    Top = 420
     Width = 25
     Caption = 'raw:'
     ParentColor = False
@@ -111,8 +111,8 @@ object Form1: TForm1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 16
-    Top = 553
-    Width = 604
+    Top = 543
+    Width = 995
     Panels = <>
   end
   object Label7: TLabel
@@ -124,7 +124,7 @@ object Form1: TForm1
     ParentColor = False
   end
   object isrecording: TShape
-    Left = 264
+    Left = 271
     Height = 38
     Top = 264
     Width = 49
@@ -133,23 +133,25 @@ object Form1: TForm1
     Visible = False
   end
   object RadioButton1: TRadioButton
-    Left = 128
+    Left = 8
     Height = 23
     Top = 272
     Width = 67
     Caption = 'Record'
     Checked = True
+    OnChange = RadioButton2Change
     OnClick = RadioButton2Change
     TabOrder = 6
     TabStop = True
   end
   object RadioButton2: TRadioButton
-    Left = 202
+    Left = 144
     Height = 23
     Top = 272
     Width = 50
     Caption = 'Play'
     OnChange = RadioButton2Change
+    OnClick = RadioButton2Change
     TabOrder = 7
   end
   object SpeedButton2: TSpeedButton
@@ -162,11 +164,12 @@ object Form1: TForm1
     OnClick = SpeedButton2Click
   end
   object ROI: TShape
-    Left = 136
-    Height = 64
-    Top = 72
-    Width = 64
+    Left = 96
+    Height = 16
+    Top = 112
+    Width = 145
     Brush.Style = bsClear
+    OnChangeBounds = ROIChangeBounds
   end
   object SpeedButton3: TSpeedButton
     Left = 328
@@ -177,16 +180,117 @@ object Form1: TForm1
     OnClick = SpeedButton3Click
   end
   object Memo2: TMemo
-    Left = 448
+    Left = 456
     Height = 532
     Top = 8
-    Width = 142
+    Width = 128
     ScrollBars = ssAutoBoth
     TabOrder = 8
   end
+  object Label8: TLabel
+    Left = 400
+    Height = 14
+    Top = 388
+    Width = 40
+    Caption = 'Label8'
+    ParentColor = False
+  end
+  object SpeedButton4: TSpeedButton
+    Left = 328
+    Height = 40
+    Top = 88
+    Width = 112
+    Caption = 'Clear Data'
+    OnClick = SpeedButton4Click
+  end
+  object Image2: TImage
+    Left = 712
+    Height = 255
+    Top = 8
+    Width = 274
+  end
+  object SpeedButton5: TSpeedButton
+    Left = 328
+    Height = 40
+    Top = 128
+    Width = 112
+    Caption = 'Record Cal'
+    OnClick = SpeedButton5Click
+  end
+  object Edit5: TEdit
+    Left = 328
+    Height = 26
+    Top = 176
+    Width = 112
+    TabOrder = 9
+  end
+  object SpeedButton6: TSpeedButton
+    Left = 328
+    Height = 40
+    Top = 208
+    Width = 112
+    Caption = 'Load Cal'
+    OnClick = SpeedButton6Click
+  end
+  object Memo3: TMemo
+    Left = 592
+    Height = 532
+    Top = 8
+    Width = 112
+    ScrollBars = ssAutoBoth
+    TabOrder = 10
+  end
+  object Memo4: TMemo
+    Left = 712
+    Height = 266
+    Top = 272
+    Width = 272
+    ScrollBars = ssAutoBoth
+    TabOrder = 11
+  end
+  object Label9: TLabel
+    Left = 400
+    Height = 14
+    Top = 400
+    Width = 40
+    Caption = 'Label9'
+    ParentColor = False
+  end
+  object Label10: TLabel
+    Left = 320
+    Height = 14
+    Top = 388
+    Width = 80
+    Caption = 'Center Temp:'
+    ParentColor = False
+  end
+  object Label11: TLabel
+    Left = 336
+    Height = 14
+    Top = 400
+    Width = 61
+    Caption = 'FPA Temp:'
+    ParentColor = False
+  end
+  object Label12: TLabel
+    Left = 320
+    Height = 14
+    Top = 416
+    Width = 78
+    Caption = 'Mouse Temp:'
+    ParentColor = False
+  end
+  object Label13: TLabel
+    Left = 400
+    Height = 14
+    Top = 416
+    Width = 48
+    Caption = 'Label13'
+    ParentColor = False
+  end
   object camera: TSdpoVideo4L2
     Active = False
-    Device = '/dev/video0'
+    Device = '/dev/video1'
     Width = 320
     Height = 256
     FrameRate = 25
@@ -194,19 +298,19 @@ object Form1: TForm1
     PixelFormat = uvcpf_YUYV
     UseLibV4l = False
     OnFrame = cameraFrame
-    left = 184
-    top = 496
+    left = 856
+    top = 520
   end
   object Timer1: TTimer
     OnTimer = Timer1Timer
-    left = 256
-    top = 496
+    left = 888
+    top = 520
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = '.dat'
     FileName = '*.dat'
     Filter = 'VIdeo Files|*.dat'
-    left = 320
-    top = 392
+    left = 920
+    top = 520
   end
 end
