@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 427
+  Left = 420
   Height = 559
-  Top = 132
+  Top = 134
   Width = 995
   Caption = 'BOSON 320 Capture'
   ClientHeight = 559

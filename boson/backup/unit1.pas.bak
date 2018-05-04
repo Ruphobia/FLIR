@@ -350,6 +350,8 @@ begin
         begin
           CALData[i].CalPoint[j] := CALData[i].CalPoint[j] / CALData[i].CalPointCount[j];
           CALData[i].CalPointCal[j] := i / CALData[i].CalPoint[j];
+          if i = 360 then
+            memo1.lines.add(floattostr(CALData[i].CalPoint[j]));
         end;
     end;
   end;
@@ -434,6 +436,8 @@ begin
   try
     EnterCriticalSection(CenterPointMutex);
 
+    //RunCommand('./rawBoson',['c00050012','x0','x0','x0','x0'],ss);
+
     if RunCommand('./rawBoson',['c00050030'],ss) then
     if pos('Error',ss) = 0 then
     begin
@@ -445,7 +449,7 @@ begin
       begin
         centertemp := FloatToStrF(GetCalibratedValue(CenterPoint,lastfpatemp),ffFixed,8,1);
         label8.caption := centertemp + 'C';
-        memo3.lines.add(centertemp + ',' + edit5.Caption + ',' + FloatToStrF(lastfpatemp/10,ffFixed,8,1));
+        memo3.lines.add(centertemp + ',' + edit5.Caption + ',' + FloatToStrF(lastfpatemp/10,ffFixed,8,1) + ',' + inttostr(CenterPoint));
       end;
 
       inc(RuntimeSeconds);

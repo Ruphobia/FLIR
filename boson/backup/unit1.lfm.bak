@@ -1,11 +1,11 @@
 object Form1: TForm1
-  Left = 427
-  Height = 569
-  Top = 132
-  Width = 1066
+  Left = 420
+  Height = 559
+  Top = 134
+  Width = 995
   Caption = 'BOSON 320 Capture'
-  ClientHeight = 569
-  ClientWidth = 1066
+  ClientHeight = 559
+  ClientWidth = 995
   OnCreate = FormCreate
   LCLVersion = '1.8.0.6'
   object Image1: TImage
@@ -111,8 +111,8 @@ object Form1: TForm1
   object StatusBar1: TStatusBar
     Left = 0
     Height = 16
-    Top = 553
-    Width = 1066
+    Top = 543
+    Width = 995
     Panels = <>
   end
   object Label7: TLabel
@@ -207,7 +207,7 @@ object Form1: TForm1
     Left = 712
     Height = 255
     Top = 8
-    Width = 344
+    Width = 274
   end
   object SpeedButton5: TSpeedButton
     Left = 328
@@ -244,7 +244,7 @@ object Form1: TForm1
     Left = 712
     Height = 266
     Top = 272
-    Width = 342
+    Width = 272
     ScrollBars = ssAutoBoth
     TabOrder = 11
   end
