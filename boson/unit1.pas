@@ -623,12 +623,12 @@ begin
 
    image2.picture.Clear;
     s := '';
-    y := roi.top + (roi.height div 2);
-    for x := roi.left to roi.Left + roi.width do
-      begin
-        image2.canvas.Pixels[x-roi.left,255 - ((RawVideoFrame[x,y]- min) div ((max - min) div 220))] := clwhite;
-        s := s + inttostr(RawVideoFrame[x,y]) + ',';
-      end;
+//    y := roi.top + (roi.height div 2);
+ //   for x := roi.left to roi.Left + roi.width do
+//      begin
+//        image2.canvas.Pixels[x-roi.left,255 - ((RawVideoFrame[x,y]- min) div ((max - min) div 220))] := clwhite;
+//        s := s + inttostr(RawVideoFrame[x,y]) + ',';
+ //     end;
     //memo2.lines.add(s);
 
   finally

@@ -190,7 +190,7 @@ begin
       //change status to stop capture
       SpeedButton1.Caption := 'Stop Capture';
       //make a directory name based on session and date/time
-      dt := edit1.text + '_' + datetimetostr(time);
+      dt := edit1.text + '_' + datetimetostr(now);
       //add our directory name to the notes
       memo1.lines.add(dt);
       CreateDir(dt);//create a new directory
