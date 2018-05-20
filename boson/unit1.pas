@@ -62,6 +62,7 @@ type
     Timer1: TTimer;
     procedure cameraFrame(Sender: TObject; FramePtr: PByte);
     procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer
       );
     procedure RadioButton1Change(Sender: TObject);
@@ -135,6 +136,13 @@ begin
   camera.Active:=true;
   roi.Left := (320 div 2) - (roi.width div 2);
   //roi.top := (256 div 2) - (roi.height div 2);
+end;
+
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+   camera.Active:=false;
+   sleep(1000);
+   application.ProcessMessages;
 end;
 
 procedure TForm1.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
@@ -492,6 +500,8 @@ var
   rr : integer;
   temp : double;
   s : string;
+  minmax : double;
+  minmaxdw : dword;
 
 begin
   try
@@ -581,19 +591,28 @@ begin
       for x := 0 to 319 do
         begin
           //scale the image to fit within 8 bits
-          d := ((RawVideoFrame[x,y]- min) div ((max - min) div 200));
+          minmax := (max - min);
+          if minmax < 200 then
+            minmax := 200;
+
+          minmaxdw := trunc(minmax / 200);
+
+          if minmaxdw < 1 then
+            minmaxdw := 1;
+
+          d := ((RawVideoFrame[x,y]- min) div minmaxdw);
           if d < 0 then
             d := 0;
 
 
           //copy the pixels so we have a greyscale image
-          pp^ := d;
+          pp^ := ($FF and d);
           inc(pp);
-          pp^ := d;
+          pp^ := ($FF and d);
           inc(pp);
-          pp^ := d;
+          pp^ := ($FF and d);
           inc(pp);
-          pp^ := d;
+          pp^ := ($FF and d);
           inc(pp);
       end;
 
